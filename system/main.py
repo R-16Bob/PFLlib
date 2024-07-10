@@ -17,6 +17,8 @@
 
 #!/usr/bin/env python
 import copy
+import sys
+
 import torch
 import argparse
 import os
@@ -479,9 +481,20 @@ if __name__ == "__main__":
     # FedAvgDBE
     parser.add_argument('-mo', "--momentum", type=float, default=0.1)
     parser.add_argument('-klw', "--kl_weight", type=float, default=0.0)
+    # my add
+    parser.add_argument('-red', "--redirect", type=bool, default=False)
 
 
     args = parser.parse_args()
+
+    # redirect output
+    if args.redirect:
+        result_path = "../results/"
+        algo = args.dataset + "_" + args.algorithm + "_" + args.goal
+        file_path = result_path + "{}.out".format(algo)
+        print("Output file path: " + file_path)
+        sys.stdout = open(file_path,'a+', 1)
+        sys.stderr = open(file_path,'a+', 1)
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.device_id
 
