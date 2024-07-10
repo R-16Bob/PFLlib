@@ -5,9 +5,9 @@
 ![](./structure.png)
 Figure 1: An Example for FedAvg. You can create a scenario using `generate_DATA.py` and run an algorithm using `main.py`, `clientNAME.py`, and `serverNAME.py`. 
 
-***We expose this user-friendly algorithm library (with an integrated evaluation platform) for beginners who intend to start federated learning (FL) study.***
+***We've created a user-friendly algorithm library and evaluation platform for those new to federated learning. Join us in expanding the FL community by contributing your algorithms, datasets, and metrics to this project.***
 
-- ***34 traditional FL ([tFL](#traditional-fl-tfl)) or personalized FL ([pFL](#personalized-fl-pfl)) algorithms, 3 scenarios, and 20 datasets**.*
+- ***36 traditional FL ([tFL](#traditional-fl-tfl)) or personalized FL ([pFL](#personalized-fl-pfl)) algorithms, 3 scenarios, and 20 datasets**.*
 
 - Some **experimental results** are avalible [here](#experimental-results). 
 
@@ -15,7 +15,7 @@ Figure 1: An Example for FedAvg. You can create a scenario using `generate_DATA.
 
 - *This library can simulate scenarios using the 4-layer CNN on Cifar100 for **500 clients** on **one NVIDIA GeForce RTX 3090 GPU card** with only **5.08GB GPU memory** cost.*
 
-- To simultaneously support statistical and **model heterogeneity**, please refer to our extended project **[Heterogeneous Federated Learning (HtFL)](https://github.com/TsingZ0/HtFL)**. 
+- PFLlib primarily focuses on data (statistical) heterogeneity. For algorithms and an evaluation platform that address **both data and model heterogeneity**, please refer to our extended project **[Heterogeneous Federated Learning (HtFL)](https://github.com/TsingZ0/HtFL)**.
 
 - As we strive to meet diverse user demands, frequent updates to the project may alter default settings and scenario creation codes, affecting experimental results.
   
@@ -25,7 +25,7 @@ Figure 1: An Example for FedAvg. You can create a scenario using `generate_DATA.
 
 The origin of the **statistical heterogeneity** phenomenon is the personalization of users, who generate non-IID (not Independent and Identically Distributed) and unbalanced data. With statistical heterogeneity existing in the FL scenario, a myriad of approaches have been proposed to crack this hard nut. In contrast, the personalized FL (pFL) may take advantage of the statistically heterogeneous data to learn the personalized model for each user. 
 
-Thanks to [@Stonesjtu](https://github.com/Stonesjtu/pytorch_memlab/blob/d590c489236ee25d157ff60ecd18433e8f9acbe3/pytorch_memlab/mem_reporter.py#L185), this library can also record the **GPU memory usage** for the model. By using the package [opacus](https://opacus.ai/), we introduce **DP (differential privacy)** into this library (please refer to `./system/flcore/clients/clientavg.py` for example). Following [FedCG](https://www.ijcai.org/proceedings/2022/0324.pdf), we also introduce the **[DLG (Deep Leakage from Gradients)](https://papers.nips.cc/paper_files/paper/2019/hash/60a6c4002cc7b29142def8871531281a-Abstract.html) attack** and **PSNR (Peak Signal-to-Noise Ratio) metric** to evaluate the privacy-preserving ability of tFL/pFL algorithms (please refer to `./system/flcore/servers/serveravg.py` for example). *Now we can train on some clients and evaluate performance on other new clients by setting `args.num_new_clients` in `./system/main.py`. Note that not all the tFL/pFL algorithms support this feature.*
+Thanks to [@Stonesjtu](https://github.com/Stonesjtu/pytorch_memlab/blob/d590c489236ee25d157ff60ecd18433e8f9acbe3/pytorch_memlab/mem_reporter.py#L185), this library can also record the **GPU memory usage** for the model. Following [FedCG](https://www.ijcai.org/proceedings/2022/0324.pdf), we also introduce the **[DLG (Deep Leakage from Gradients)](https://papers.nips.cc/paper_files/paper/2019/hash/60a6c4002cc7b29142def8871531281a-Abstract.html) attack** and **PSNR (Peak Signal-to-Noise Ratio) metric** to evaluate the privacy-preserving ability of tFL/pFL algorithms (please refer to `./system/flcore/servers/serveravg.py` for example). *Now we can train on some clients and evaluate performance on other new clients by setting `args.num_new_clients` in `./system/main.py`. Note that not all the tFL/pFL algorithms support this feature.*
 
 **Citation**
 
@@ -98,6 +98,8 @@ Thanks to [@Stonesjtu](https://github.com/Stonesjtu/pytorch_memlab/blob/d590c489
 - **GPFL** — [GPFL: Simultaneously Learning Generic and Personalized Feature Information for Personalized Federated Learning](https://arxiv.org/pdf/2308.10279v3.pdf) *ICCV 2023*
 - **FedGH** — [FedGH: Heterogeneous Federated Learning with Generalized Global Header](https://dl.acm.org/doi/10.1145/3581783.3611781) *ACM MM 2023*
 - **DBE** — [Eliminating Domain Bias for Federated Learning in Representation Space](https://openreview.net/forum?id=nO5i1XdUS0) *NeurIPS 2023*
+- **FedCAC** — [Bold but Cautious: Unlocking the Potential of Personalized Federated Learning through Cautiously Aggressive Collaboration](https://arxiv.org/abs/2309.11103) *ICCV 2023*
+- **PFL-DA** — [Personalized Federated Learning via Domain Adaptation with an Application to Distributed 3D Printing](https://www.tandfonline.com/doi/full/10.1080/00401706.2022.2157882) *Technometrics 2023*
 
   ***Knowledge-distillation-based pFL***
 
@@ -125,6 +127,7 @@ For the ***real-world (or IoT)*** scenario, we also introduce **3** naturally se
     # python generate_MNIST.py iid balance - # for iid and balanced scenario
     # python generate_MNIST.py noniid - pat # for pathological noniid and unbalanced scenario
     python generate_MNIST.py noniid - dir # for practical noniid and unbalanced scenario
+    # python generate_MNIST.py noniid - exdir # for Extended Dirichlet strategy 
     ```
 
 The output of `python generate_MNIST.py noniid - dir`
@@ -315,8 +318,7 @@ If you are interested in **the experimental results (e.g., the accuracy) of the 
   year={2023}
 }
 
-@inproceedings{
-  zhang2023eliminating,
+@inproceedings{zhang2023eliminating,
   title={Eliminating Domain Bias for Federated Learning in Representation Space},
   author={Jianqing Zhang and Yang Hua and Jian Cao and Hao Wang and Tao Song and Zhengui XUE and Ruhui Ma and Haibing Guan},
   booktitle={Thirty-seventh Conference on Neural Information Processing Systems},

@@ -61,6 +61,8 @@ from flcore.servers.servergpfl import GPFL
 from flcore.servers.serverntd import FedNTD
 from flcore.servers.servergh import FedGH
 from flcore.servers.serveravgDBE import FedAvgDBE
+from flcore.servers.servercac import FedCAC
+from flcore.servers.serverda import PFL_DA
 
 from flcore.trainmodel.models import *
 
@@ -355,6 +357,15 @@ def run(args):
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedAvgDBE(args, i)
+
+        elif args.algorithm == 'FedCAC':
+            server = FedCAC(args, i)
+
+        elif args.algorithm == 'PFL-DA':
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = PFL_DA(args, i)
             
         else:
             raise NotImplementedError
@@ -408,9 +419,6 @@ if __name__ == "__main__":
                         help="Running times")
     parser.add_argument('-eg', "--eval_gap", type=int, default=1,
                         help="Rounds gap for evaluation")
-    parser.add_argument('-dp', "--privacy", type=bool, default=False,
-                        help="differential privacy")
-    parser.add_argument('-dps', "--dp_sigma", type=float, default=0.0)
     parser.add_argument('-sfn', "--save_folder_name", type=str, default='items')
     parser.add_argument('-ab', "--auto_break", type=bool, default=False)
     parser.add_argument('-dlg', "--dlg_eval", type=bool, default=False)
@@ -429,7 +437,7 @@ if __name__ == "__main__":
                         help="Whether to group and select clients at each round according to time cost")
     parser.add_argument('-tth', "--time_threthold", type=float, default=10000,
                         help="The threthold for droping slow clients")
-    # pFedMe / PerAvg / FedProx / FedAMP / FedPHP / GPFL
+    # pFedMe / PerAvg / FedProx / FedAMP / FedPHP / GPFL / FedCAC
     parser.add_argument('-bt', "--beta", type=float, default=0.0)
     parser.add_argument('-lam', "--lamda", type=float, default=1.0,
                         help="Regularization weight")
@@ -452,7 +460,7 @@ if __name__ == "__main__":
     parser.add_argument('-al', "--alpha", type=float, default=1.0)
     # Ditto / FedRep
     parser.add_argument('-pls', "--plocal_epochs", type=int, default=1)
-    # MOON
+    # MOON / FedCAC
     parser.add_argument('-tau', "--tau", type=float, default=1.0)
     # FedBABU
     parser.add_argument('-fte', "--fine_tuning_epochs", type=int, default=10)
@@ -510,9 +518,6 @@ if __name__ == "__main__":
     print("Number of classes: {}".format(args.num_classes))
     print("Backbone: {}".format(args.model))
     print("Using device: {}".format(args.device))
-    print("Using DP: {}".format(args.privacy))
-    if args.privacy:
-        print("Sigma for DP: {}".format(args.dp_sigma))
     print("Auto break: {}".format(args.auto_break))
     if not args.auto_break:
         print("Global rounds: {}".format(args.global_rounds))
