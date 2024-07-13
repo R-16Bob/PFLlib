@@ -497,6 +497,8 @@ if __name__ == "__main__":
     # redirect output
     if args.redirect:
         result_path = "../results/"
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
         algo = args.dataset + "_" + args.algorithm + "_" + args.goal
         file_path = result_path + "{}.out".format(algo)
         print("Output file path: " + file_path)
