@@ -18,7 +18,6 @@
 import time
 import torch
 
-from scipy.stats import truncnorm
 
 from flcore.clients.clientavg import clientAVG
 from flcore.servers.serverbase import Server
@@ -40,10 +39,11 @@ class FedKDSim(Server):
 
         # self.load_model()
         self.Budget = []
+        self.cid_to_vectors = {}
+        self.sims={}
 
-        self.personalized_models = []
 
-        # TODO: Fixed gaussian noise for model embedding
+        # Fixed gaussian noise for model embedding
         if "MNIST" in self.dataset:
             mean, std = 0, 1
             self.rgauss = torch.randn(1, 28, 28) * std + mean
@@ -69,21 +69,22 @@ class FedKDSim(Server):
                 client.send_time_cost['num_rounds'] += 1
                 client.send_time_cost['total_cost'] += 2 * (time.time() - start_time)
 
-    # TODO: Construct a KD-Tree after clients finished training
-    def client_similarity(self, updates):
-        self.restore_clients(updates)
-        for rid, rmodel in self.restored_clients.items():
-            cid = self.rid_to_cid[rid]
-            self.cid_to_vectors[cid] = np.squeeze(rmodel(self.rgauss)) # embed models
+    # Construct a KD-Tree after clients finished training
+    def client_similarity(self):
+        for client in self.selected_clients:
+            self.cid_to_vectors[client.id] = np.squeeze(client.model(self.rgauss))  # embedding models dictionary
         self.vid_to_cid = list(self.cid_to_vectors.keys())
         self.vectors = list(self.cid_to_vectors.values())
         self.tree = spatial.KDTree(self.vectors)
 
-    # TODO: Search similar models using KD-Tree
-    def get_similar_models(self, cid):
-        if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
-            cout = self.cid_to_vectors[cid]
-            sims = self.tree.query(cout, self.args.num_helpers+1)
+    # TODO: Search similar models for each selected client using KD-Tree
+    def get_similar_models(self):
+        #if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
+        for client in self.selected_clients:
+            cid=client.id
+            embedding = self.cid_to_vectors[cid]
+            searchs= self.tree.query(embedding, self.args.num_agg_clients)
+            self.sims[cid]=searchs[1]
             hids = []
             weights = []
             for vid in sims[1]:
@@ -99,8 +100,35 @@ class FedKDSim(Server):
             return weights[:self.args.num_helpers]
         else:
             return None
+
+    def receive_models(self):
+        assert (len(self.selected_clients) > 0)
+
+        active_clients = random.sample(
+            self.selected_clients, int((1-self.client_drop_rate) * self.current_num_join_clients))
+
+        self.uploaded_ids = []
+        self.uploaded_weights = []
+        self.uploaded_models = []
+        tot_samples = 0
+        for client in active_clients:
+            try:
+                client_time_cost = client.train_time_cost['total_cost'] / client.train_time_cost['num_rounds'] + \
+                        client.send_time_cost['total_cost'] / client.send_time_cost['num_rounds']
+            except ZeroDivisionError:
+                client_time_cost = 0
+            if client_time_cost <= self.time_threthold:
+                tot_samples += client.train_samples
+                self.uploaded_ids.append(client.id)
+                self.uploaded_weights.append(client.train_samples)
+                self.uploaded_models.append(client.model)
+        for i, w in enumerate(self.uploaded_weights):
+            self.uploaded_weights[i] = w / tot_samples
+    # TODO:Override aggregate_parameters
+    def aggregate_parameters(self):
+        return 0
     def train(self):
-        for i in range(self.global_rounds+1): # global round
+        for i in range(self.global_rounds+1):  # global round
             s_t = time.time()
             self.selected_clients = self.select_clients()
             self.send_models(i)  # TODO: override send models
@@ -118,12 +146,13 @@ class FedKDSim(Server):
             # [t.start() for t in threads]
             # [t.join() for t in threads]
 
-            self.receive_models()
-            # TODO：Construct a KD-Tree after clients finished training
-            # if self.dlg_eval and i%self.dlg_gap == 0: # DLG_Attack
-            #     self.call_dlg(i)
-            # TODO: Search similar models using KD-Tree
+            # Construct a KD-Tree after clients finished training
+            self.client_similarity()
+
+            # Search similar models using KD-Tree
+            self.get_similar_models()
             # TODO: personalized aggregation for selected clients
+            self.receive_models()
             self.aggregate_parameters()
 
             self.Budget.append(time.time() - s_t)

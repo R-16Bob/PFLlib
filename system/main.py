@@ -494,7 +494,8 @@ if __name__ == "__main__":
     parser.add_argument('-klw', "--kl_weight", type=float, default=0.0)
     # redirect
     parser.add_argument('-red', "--redirect", type=bool, default=False)
-
+    # KDSim
+    parser.add_argument('-nac', "--num_agg_clients", type=int, default=4)
     args = parser.parse_args()
 
     # redirect output
