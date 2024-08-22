@@ -54,17 +54,17 @@ class FedKDSim(Server):
         else:
             raise NotImplementedError("Dataset gaussian noise not implemented!")
 
-    # TODO：override send_models
+    # override send_models
     def send_models(self,i):
         if i == 0:  # initialization all client models
             super().send_models()
         else:
             assert (len(self.selected_clients) > 0)
 
-            for client in self.selected_clients:
+            for sid,client in enumerate(self.selected_clients):
                 start_time = time.time()
 
-                client.set_parameters(self.global_model)  # TODO:替换为对应的个性化模型
+                client.set_parameters(self.personalized_model[sid])  # personalized model
 
                 client.send_time_cost['num_rounds'] += 1
                 client.send_time_cost['total_cost'] += 2 * (time.time() - start_time)
@@ -77,61 +77,71 @@ class FedKDSim(Server):
         self.vectors = list(self.cid_to_vectors.values())
         self.tree = spatial.KDTree(self.vectors)
 
-    # TODO: Search similar models for each selected client using KD-Tree
-    def get_similar_models(self):
+    # Search similar models for each selected client using KD-Tree
+    def get_similar_models(self,i):
         #if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
             searchs= self.tree.query(embedding, self.args.num_agg_clients)
-            self.sims[cid]=searchs[1]
-            hids = []
-            weights = []
-            for vid in sims[1]:
-                selected_cid = self.vid_to_cid[vid]
-                if selected_cid == cid:
-                    continue
-                w = self.cid_to_weights[selected_cid]
-                if self.args.scenario == 'labels-at-client':
-                    half = len(w)//2
-                    w = w[half:]
-                weights.append(w)
-                hids.append(selected_cid)
-            return weights[:self.args.num_helpers]
-        else:
-            return None
+            self.sims[cid]=[]
+            for vid in searchs[1]:
+                self.sims[cid].append(self.vid_to_cid[vid])
+            print("Epoch:{},cid:{},sims:{}".format(i, cid, self.sims[cid]))
 
+    # override receive_models
     def receive_models(self):
         assert (len(self.selected_clients) > 0)
 
         active_clients = random.sample(
-            self.selected_clients, int((1-self.client_drop_rate) * self.current_num_join_clients))
+            self.selected_clients, int((1-self.client_drop_rate) * self.current_num_join_clients))  # not used in KDSim
 
-        self.uploaded_ids = []
-        self.uploaded_weights = []
-        self.uploaded_models = []
-        tot_samples = 0
-        for client in active_clients:
+        self.uploaded_ids = {}
+        self.uploaded_weights = {}
+        self.uploaded_models = {}
+        tot_samples = [0 for i in range(self.current_num_join_clients)]
+
+        for sid,client in enumerate(active_clients):
             try:
                 client_time_cost = client.train_time_cost['total_cost'] / client.train_time_cost['num_rounds'] + \
                         client.send_time_cost['total_cost'] / client.send_time_cost['num_rounds']
             except ZeroDivisionError:
                 client_time_cost = 0
             if client_time_cost <= self.time_threthold:
-                tot_samples += client.train_samples
-                self.uploaded_ids.append(client.id)
-                self.uploaded_weights.append(client.train_samples)
-                self.uploaded_models.append(client.model)
-        for i, w in enumerate(self.uploaded_weights):
-            self.uploaded_weights[i] = w / tot_samples
-    # TODO:Override aggregate_parameters
+                # get weights for each selected client
+                tot_samples[sid] += client.train_samples
+                agg_list=self.sims[client.id]
+                self.uploaded_ids[sid] = agg_list
+                self.uploaded_weights[sid] = []
+                self.uploaded_models[sid] = []
+                for agg_cid in agg_list:
+                    agg_client=self.clients[agg_cid]
+                    self.uploaded_weights[sid].append(agg_client.train_samples)
+                    self.uploaded_models[sid].append(agg_client.model)
+                for i, w in enumerate(self.uploaded_weights[sid]):
+                    self.uploaded_weights[i] = w / tot_samples[sid]
+
+    # Override aggregate_parameters
     def aggregate_parameters(self):
-        return 0
+        for sid,client in enumerate(self.selected_clients):
+            assert (len(self.uploaded_models[sid]) > 0)
+            self.personalized_model={}
+            self.personalized_model[sid] = copy.deepcopy(self.uploaded_models[sid][0])
+            for param in self.personalized_model[sid].parameters():
+                param.data.zero_()
+
+            for w, client_model in zip(self.uploaded_weights[sid], self.uploaded_models[sid]):
+                self.add_parameters(w, client_model,sid)
+
+    # override add_parameters
+    def add_parameters(self, w, client_model, sid):
+        for personalized_param, client_param in zip(self.personalized_model[sid].parameters(), client_model.parameters()):
+            personalized_param.data += client_param.data.clone() * w
     def train(self):
         for i in range(self.global_rounds+1):  # global round
             s_t = time.time()
             self.selected_clients = self.select_clients()
-            self.send_models(i)  # TODO: override send models
+            self.send_models(i)  # override send models
 
             if i%self.eval_gap == 0:
                 print(f"\n-------------Round number: {i}-------------")
@@ -147,11 +157,11 @@ class FedKDSim(Server):
             # [t.join() for t in threads]
 
             # Construct a KD-Tree after clients finished training
-            self.client_similarity()
+            self.client_similarity(i)
 
             # Search similar models using KD-Tree
             self.get_similar_models()
-            # TODO: personalized aggregation for selected clients
+            # personalized aggregation for selected clients
             self.receive_models()
             self.aggregate_parameters()
 
