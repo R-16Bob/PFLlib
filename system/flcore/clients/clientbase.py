@@ -110,6 +110,7 @@ class Client(object):
                     x[0] = x[0].to(self.device)
                 else:
                     x = x.to(self.device)
+                    # print(x)
                 y = y.to(self.device)
                 output = self.model(x)
 
