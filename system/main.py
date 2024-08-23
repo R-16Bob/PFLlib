@@ -29,10 +29,10 @@ import torchvision
 import logging
 
 from flcore.servers.serveravg import FedAvg
-from flcore.servers.serveKDSim import FedKDSim
+from flcore.servers.serverKDSim import FedKDSim
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
-# from flcore.servers.serverprox import FedProx
+from flcore.servers.serverprox import FedProx
 # from flcore.servers.serverfomo import FedFomo
 # from flcore.servers.serveramp import FedAMP
 # from flcore.servers.servermtl import FedMTL
@@ -224,8 +224,8 @@ def run(args):
         # elif args.algorithm == "pFedMe":
         #     server = pFedMe(args, i)
         #
-        # elif args.algorithm == "FedProx":
-        #     server = FedProx(args, i)
+        elif args.algorithm == "FedProx":
+            server = FedProx(args, i)
         #
         # elif args.algorithm == "FedFomo":
         #     server = FedFomo(args, i)
