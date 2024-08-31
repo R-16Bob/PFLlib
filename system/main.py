@@ -36,7 +36,7 @@ from flcore.servers.serverprox import FedProx
 # from flcore.servers.serverfomo import FedFomo
 # from flcore.servers.serveramp import FedAMP
 # from flcore.servers.servermtl import FedMTL
-# from flcore.servers.serverlocal import Local
+from flcore.servers.serverlocal import Local
 # from flcore.servers.serverper import FedPer
 # from flcore.servers.serverapfl import APFL
 # from flcore.servers.serverditto import Ditto
@@ -52,7 +52,7 @@ from flcore.servers.serverprox import FedProx
 # from flcore.servers.servergen import FedGen
 # from flcore.servers.serverscaffold import SCAFFOLD
 # from flcore.servers.serverdistill import FedDistill
-# from flcore.servers.serverala import FedALA
+from flcore.servers.serverala import FedALA
 # from flcore.servers.serverpac import FedPAC
 # from flcore.servers.serverlg import LG_FedAvg
 # from flcore.servers.servergc import FedGC
@@ -64,7 +64,7 @@ from flcore.servers.serverprox import FedProx
 # from flcore.servers.serverntd import FedNTD
 # from flcore.servers.servergh import FedGH
 # from flcore.servers.serveravgDBE import FedAvgDBE
-# from flcore.servers.servercac import FedCAC
+from flcore.servers.servercac import FedCAC
 # from flcore.servers.serverda import PFL_DA
 
 from flcore.trainmodel.models import *
@@ -212,8 +212,8 @@ def run(args):
         elif args.algorithm == "FedKDSim":
             server = FedKDSim(args, i)
 
-        # elif args.algorithm == "Local":
-        #     server = Local(args, i)
+        elif args.algorithm == "Local":
+            server = Local(args, i)
 
         # elif args.algorithm == "FedMTL":
         #     server = FedMTL(args, i)
@@ -302,8 +302,8 @@ def run(args):
         # elif args.algorithm == "FedDistill":
         #     server = FedDistill(args, i)
         #
-        # elif args.algorithm == "FedALA":
-        #     server = FedALA(args, i)
+        elif args.algorithm == "FedALA":
+            server = FedALA(args, i)
         #
         # elif args.algorithm == "FedPAC":
         #     args.head = copy.deepcopy(args.model.fc)
@@ -363,8 +363,8 @@ def run(args):
         #     args.model = BaseHeadSplit(args.model, args.head)
         #     server = FedAvgDBE(args, i)
         #
-        # elif args.algorithm == 'FedCAC':
-        #     server = FedCAC(args, i)
+        elif args.algorithm == 'FedCAC':
+            server = FedCAC(args, i)
         #
         # elif args.algorithm == 'PFL-DA':
         #     args.head = copy.deepcopy(args.model.fc)

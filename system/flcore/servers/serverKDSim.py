@@ -45,13 +45,13 @@ class FedKDSim(Server):
 
 
         # Fixed gaussian noise for model embedding
+        batch_size = 1
         if "MNIST" in self.dataset:
             mean, std = 0, 1
-            self.rgauss = torch.randn(1, 1, 28, 28) * std + mean
+            self.rgauss = torch.randn(batch_size, 1, 28, 28) * std + mean
             # print('rgauss:', self.rgauss.shape)
-        elif "Cifar10" in args.dataset:
+        elif "Cifar10" in args.dataset:  # Cifar10 and Cifar100
             mean, std = 0.0, 0.1
-            batch_size = 1
             self.rgauss = torch.randn(batch_size, 3, 32, 32) * std + mean
         else:
             raise NotImplementedError("Dataset gaussian noise not implemented!")
@@ -79,6 +79,7 @@ class FedKDSim(Server):
         self.vid_to_cid = list(self.cid_to_vectors.keys())
         self.vectors = np.vstack(list(self.cid_to_vectors.values()))
         self.tree = spatial.KDTree(self.vectors)
+        print('embeddings:',self.vectors)
 
     # Search similar models for each selected client using KD-Tree
     def get_similar_models(self, epoch):
