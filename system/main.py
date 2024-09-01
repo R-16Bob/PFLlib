@@ -29,7 +29,7 @@ import torchvision
 import logging
 
 from flcore.servers.serveravg import FedAvg
-from flcore.servers.serverKDSim import FedKDSim
+from flcore.servers.serverKDSim_Demo import FedKDSim
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
 from flcore.servers.serverprox import FedProx
@@ -480,7 +480,7 @@ if __name__ == "__main__":
     parser.add_argument('-lf', "--localize_feature_extractor", type=bool, default=False)
     # SCAFFOLD / FedGH
     parser.add_argument('-slr', "--server_learning_rate", type=float, default=1.0)
-    # FedALA
+    # FedALA / FedKDSim(-p)
     parser.add_argument('-et', "--eta", type=float, default=1.0)
     parser.add_argument('-s', "--rand_percent", type=int, default=80)
     parser.add_argument('-p', "--layer_idx", type=int, default=2,
@@ -494,8 +494,9 @@ if __name__ == "__main__":
     parser.add_argument('-klw', "--kl_weight", type=float, default=0.0)
     # redirect
     parser.add_argument('-red', "--redirect", type=bool, default=False)
-    # KDSim
+    # FedKDSim
     parser.add_argument('-nac', "--num_agg_clients", type=int, default=4)
+    parser.add_argument('-dep', "--decouple", type=bool, default=False)
     args = parser.parse_args()
 
     # redirect output

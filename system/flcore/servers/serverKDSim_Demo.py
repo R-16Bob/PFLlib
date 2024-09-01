@@ -30,8 +30,6 @@ from threading import Thread
 class FedKDSim(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
-        self.dep=args.decouple
-        self.layer_idx = args.layer_idx
 
         # select slow clients
         self.set_slow_clients()
@@ -103,8 +101,8 @@ class FedKDSim(Server):
         #     self.selected_clients, int((1-self.client_drop_rate) * self.current_num_join_clients))  # not used in KDSim
 
         # self.uploaded_ids = {}
-        self.uploaded_weights_p = {}
-        self.uploaded_models_p = {}
+        self.uploaded_weights = {}
+        self.uploaded_models = {}
         tot_samples = [0 for i in range(self.current_num_join_clients)]
 
         for sid,client in enumerate(self.selected_clients):
@@ -117,41 +115,33 @@ class FedKDSim(Server):
                 # get weights for each selected client
                 agg_list=self.sims[client.id]
                 # self.uploaded_ids[sid] = agg_list
-                self.uploaded_weights_p[sid] = []
-                self.uploaded_models_p[sid] = []
+                self.uploaded_weights[sid] = []
+                self.uploaded_models[sid] = []
                 for agg_cid in agg_list:
                     agg_client=self.clients[agg_cid]
                     tot_samples[sid] += agg_client.train_samples
-                    self.uploaded_weights_p[sid].append(agg_client.train_samples)
-                    self.uploaded_models_p[sid].append(agg_client.model)
-                for i, w in enumerate(self.uploaded_weights_p[sid]):
-                    self.uploaded_weights_p[sid][i] = w / tot_samples[sid]
-                print("Epoch:{},cid:{},agg_cid:{},w:{}".format(epoch, client.id, agg_list, self.uploaded_weights_p[sid]))
+                    self.uploaded_weights[sid].append(agg_client.train_samples)
+                    self.uploaded_models[sid].append(agg_client.model)
+                for i, w in enumerate(self.uploaded_weights[sid]):
+                    self.uploaded_weights[sid][i] = w / tot_samples[sid]
+                print("Epoch:{},cid:{},agg_cid:{},w:{}".format(epoch, client.id, agg_list, self.uploaded_weights[sid]))
 
-    # Override aggregate_parameters to aggregate personalized models
+    # Override aggregate_parameters
     def aggregate_parameters(self):
         self.personalized_model = {}
         for sid,client in enumerate(self.selected_clients):
-            assert (len(self.uploaded_models_p[sid]) > 0)
-            self.personalized_model[sid] = copy.deepcopy(self.uploaded_models_p[sid][0])
+            assert (len(self.uploaded_models[sid]) > 0)
+            self.personalized_model[sid] = copy.deepcopy(self.uploaded_models[sid][0])
             for param in self.personalized_model[sid].parameters():
                 param.data.zero_()
-            # print(self.uploaded_weights_p[sid])
-            for w, client_model in zip(self.uploaded_weights_p[sid], self.uploaded_models_p[sid]):
+            # print(self.uploaded_weights[sid])
+            for w, client_model in zip(self.uploaded_weights[sid], self.uploaded_models[sid]):
                 self.add_parameters(w, client_model,sid)
         # print("pmodle:",self.personalized_model.keys())
     # override add_parameters
     def add_parameters(self, w, client_model, sid):
         for personalized_param, client_param in zip(self.personalized_model[sid].parameters(), client_model.parameters()):
             personalized_param.data += client_param.data.clone() * w
-
-    def parameter_decouple(self):
-        params_g=list(self.global_model)
-        for model_p in self.personalized_model:
-            params_p=list(model_p)
-            # Replace the lower layers with global model
-            for param_p, param_g in zip(params_p[:-self.layer_idx], params_g[:-self.layer_idx]):
-                param_p.data = param_g.data.clone()
     def train(self):
         for i in range(self.global_rounds+1):  # global round
             s_t = time.time()
@@ -180,11 +170,6 @@ class FedKDSim(Server):
             # personalized aggregation for selected clients
             self.receive_models(i)
             self.aggregate_parameters()
-            # get global models if decouple is True
-            if self.dep:
-                super().receive_models()
-                super().aggregate_parameters()
-                self.parameter_decouple()
 
             self.Budget.append(time.time() - s_t)
             print('-'*25, 'time cost', '-'*25, self.Budget[-1])
