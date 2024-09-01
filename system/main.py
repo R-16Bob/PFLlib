@@ -29,7 +29,7 @@ import torchvision
 import logging
 
 from flcore.servers.serveravg import FedAvg
-from flcore.servers.serverKDSim_Demo import FedKDSim
+from flcore.servers.serverKDSim import FedKDSim
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
 from flcore.servers.serverprox import FedProx

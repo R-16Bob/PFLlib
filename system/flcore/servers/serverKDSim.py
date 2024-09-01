@@ -138,17 +138,17 @@ class FedKDSim(Server):
                 param.data.zero_()
             # print(self.uploaded_weights_p[sid])
             for w, client_model in zip(self.uploaded_weights_p[sid], self.uploaded_models_p[sid]):
-                self.add_parameters(w, client_model,sid)
+                self.add_parameters_p(w, client_model,sid)
         # print("pmodle:",self.personalized_model.keys())
     # override add_parameters
-    def add_parameters(self, w, client_model, sid):
+    def add_parameters_p(self, w, client_model, sid):
         for personalized_param, client_param in zip(self.personalized_model[sid].parameters(), client_model.parameters()):
             personalized_param.data += client_param.data.clone() * w
 
     def parameter_decouple(self):
-        params_g=list(self.global_model)
+        params_g=list(self.global_model.parameters())
         for model_p in self.personalized_model:
-            params_p=list(model_p)
+            params_p=list(self.personalized_model[model_p].parameters())
             # Replace the lower layers with global model
             for param_p, param_g in zip(params_p[:-self.layer_idx], params_g[:-self.layer_idx]):
                 param_p.data = param_g.data.clone()
