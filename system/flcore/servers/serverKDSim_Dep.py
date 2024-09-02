@@ -26,7 +26,7 @@ from scipy import spatial
 import numpy as np
 from threading import Thread
 # KD-tree based similarity for personalized aggregation
-# preserve high layers of model
+# 低层使用全局模型，高层使用个性化模型
 class FedKDSim(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
@@ -81,7 +81,7 @@ class FedKDSim(Server):
         self.vid_to_cid = list(self.cid_to_vectors.keys())
         self.vectors = np.vstack(list(self.cid_to_vectors.values()))
         self.tree = spatial.KDTree(self.vectors)
-        # print('embeddings:',self.vectors)
+        print('embeddings:',self.vectors)
 
     # Search similar models for each selected client using KD-Tree
     def get_similar_models(self, epoch):
@@ -146,12 +146,12 @@ class FedKDSim(Server):
             personalized_param.data += client_param.data.clone() * w
 
     def parameter_decouple(self):
-        for model_p,client in zip(self.personalized_model,self.selected_clients):
-            params_l=list(client.model.parameters())
+        params_g=list(self.global_model.parameters())
+        for model_p in self.personalized_model:
             params_p=list(self.personalized_model[model_p].parameters())
-            # Replace the high layers with local model
-            for param_p, param_l in zip(params_p[-self.layer_idx:], params_l[-self.layer_idx:]):
-                param_p.data = param_l.data.clone()
+            # Replace the lower layers with global model
+            for param_p, param_g in zip(params_p[:-self.layer_idx], params_g[:-self.layer_idx]):
+                param_p.data = param_g.data.clone()
     def train(self):
         for i in range(self.global_rounds+1):  # global round
             s_t = time.time()
@@ -180,8 +180,10 @@ class FedKDSim(Server):
             # personalized aggregation for selected clients
             self.receive_models(i)
             self.aggregate_parameters()
-            # preserve high layers of local model
+            # get global models if decouple is True
             if self.dep:
+                super().receive_models()
+                super().aggregate_parameters()
                 self.parameter_decouple()
 
             self.Budget.append(time.time() - s_t)
