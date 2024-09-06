@@ -30,6 +30,7 @@ import logging
 
 from flcore.servers.serveravg import FedAvg
 from flcore.servers.serverKDSim import FedKDSim
+from flcore.servers.serverKDSA import FedKDSA
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
 from flcore.servers.serverprox import FedProx
@@ -211,7 +212,8 @@ def run(args):
             server = FedAvg(args, i)
         elif args.algorithm == "FedKDSim":
             server = FedKDSim(args, i)
-
+        elif args.algorithm == "FedKDSA":
+            server = FedKDSA(args, i)
         elif args.algorithm == "Local":
             server = Local(args, i)
 
@@ -443,7 +445,7 @@ if __name__ == "__main__":
     parser.add_argument('-tth', "--time_threthold", type=float, default=10000,
                         help="The threthold for droping slow clients")
     # pFedMe / PerAvg / FedProx / FedAMP / FedPHP / GPFL / FedCAC
-    parser.add_argument('-bt', "--beta", type=float, default=0.0)
+    parser.add_argument('-bt', "--beta", type=float, default=0.0)  # FedKDSA
     parser.add_argument('-lam', "--lamda", type=float, default=1.0,
                         help="Regularization weight")
     parser.add_argument('-mu', "--mu", type=float, default=0.0)

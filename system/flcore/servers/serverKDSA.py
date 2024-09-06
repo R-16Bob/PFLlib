@@ -25,13 +25,14 @@ from flcore.servers.serverbase import Server
 from scipy import spatial
 import numpy as np
 from threading import Thread
-# KD-tree based similarity for personalized aggregation
+# KD-tree based similarity for adaptive personalized aggregation
 # preserve high layers of model
-class FedKDSim(Server):
+class FedKDSA(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
         self.dep=args.decouple
         self.layer_idx = args.layer_idx
+        self.beta=args.beta
 
         # select slow clients
         self.set_slow_clients()
@@ -44,7 +45,7 @@ class FedKDSim(Server):
         self.Budget = []
         self.cid_to_vectors = {}
         self.sims={}
-        # self.distances={}
+        self.distances={}
 
 
         # Fixed gaussian noise for model embedding
@@ -85,18 +86,31 @@ class FedKDSim(Server):
         # print('embeddings:',self.vectors)
 
     # Search similar models for each selected client using KD-Tree
+    # for KDSA, we construct the threshold based on the distances
     def get_similar_models(self, epoch):
         #if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
             searchs= self.tree.query(embedding, self.args.num_agg_clients)
+            # searchs = self.tree.query(embedding, 10)
             self.sims[cid]=[]
-            # self.distances[cid] = (searchs[0])
-            for vid in searchs[1]:
-                self.sims[cid].append(self.vid_to_cid[vid])
-            print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
-            # print("distances:{}".format(self.distances[cid]))
+            self.distances[cid] = (searchs[0])
+            # construct the threshold
+            dist_min=self.distances[cid][1]
+            dist_avg=sum(self.distances[cid])/(len(self.distances[cid])-1)
+            threshold=dist_avg+(epoch/self.beta)*(dist_min-dist_avg)
+            print("distances:{}".format(self.distances[cid]))
+            print("dist_min:{}, dist_avg:{}, threshold:{}".format(dist_min, dist_avg,threshold))
+            self.sims[cid].append(cid)
+            for id,vid in enumerate(searchs[1]):
+                if id == 0:
+                    continue
+                # print("distance:{}, threshold:{}".format(self.distances[cid][id],threshold))
+                if self.distances[cid][id] < threshold:
+                    self.sims[cid].append(self.vid_to_cid[vid])
+            # print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
+
 
     # override receive_models
     def receive_models(self,epoch):
