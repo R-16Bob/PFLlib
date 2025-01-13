@@ -98,7 +98,7 @@ class FedKDSA(Server):
             self.distances[cid] = (searchs[0])
             # construct the threshold
             dist_min=self.distances[cid][1]
-            dist_avg=sum(self.distances[cid])/(len(self.distances[cid])-1)
+            dist_avg=sum(self.distances[cid])/(len(self.distances[cid])-1)  # because the distance between cid and itself is zero, the avg can be calculated like this
             threshold=dist_avg+(epoch/self.beta)*(dist_min-dist_avg)
             print("distances:{}".format(self.distances[cid]))
             print("dist_min:{}, dist_avg:{}, threshold:{}".format(dist_min, dist_avg,threshold))
@@ -107,7 +107,7 @@ class FedKDSA(Server):
                 if id == 0:
                     continue
                 # print("distance:{}, threshold:{}".format(self.distances[cid][id],threshold))
-                if self.distances[cid][id] < threshold:
+                if self.distances[cid][id] <= threshold:
                     self.sims[cid].append(self.vid_to_cid[vid])
             # print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
 

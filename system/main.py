@@ -34,8 +34,8 @@ from flcore.servers.serverKDSA import FedKDSA
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
 from flcore.servers.serverprox import FedProx
-# from flcore.servers.serverfomo import FedFomo
-# from flcore.servers.serveramp import FedAMP
+from flcore.servers.serverfomo import FedFomo
+from flcore.servers.serveramp import FedAMP
 # from flcore.servers.servermtl import FedMTL
 from flcore.servers.serverlocal import Local
 # from flcore.servers.serverper import FedPer
@@ -49,7 +49,7 @@ from flcore.servers.serverlocal import Local
 # from flcore.servers.serverdyn import FedDyn
 # from flcore.servers.servermoon import MOON
 # from flcore.servers.serverbabu import FedBABU
-# from flcore.servers.serverapple import APPLE
+from flcore.servers.serverapple import APPLE
 # from flcore.servers.servergen import FedGen
 # from flcore.servers.serverscaffold import SCAFFOLD
 # from flcore.servers.serverdistill import FedDistill
@@ -228,13 +228,13 @@ def run(args):
         #
         elif args.algorithm == "FedProx":
             server = FedProx(args, i)
-        #
-        # elif args.algorithm == "FedFomo":
-        #     server = FedFomo(args, i)
-        #
-        # elif args.algorithm == "FedAMP":
-        #     server = FedAMP(args, i)
-        #
+
+        elif args.algorithm == "FedFomo":
+            server = FedFomo(args, i)
+
+        elif args.algorithm == "FedAMP":
+            server = FedAMP(args, i)
+
         # elif args.algorithm == "APFL":
         #     server = APFL(args, i)
         #
@@ -289,9 +289,9 @@ def run(args):
         #     args.model = BaseHeadSplit(args.model, args.head)
         #     server = FedBABU(args, i)
         #
-        # elif args.algorithm == "APPLE":
-        #     server = APPLE(args, i)
-        #
+        elif args.algorithm == "APPLE":
+            server = APPLE(args, i)
+
         # elif args.algorithm == "FedGen":
         #     args.head = copy.deepcopy(args.model.fc)
         #     args.model.fc = nn.Identity()
