@@ -32,7 +32,9 @@ class FedKDSA(Server):
         super().__init__(args, times)
         self.dep=args.decouple
         self.layer_idx = args.layer_idx
+        # KDSA parameters
         self.beta=args.beta
+        self.num_agg_clients=args.num_agg_clients
 
         # select slow clients
         self.set_slow_clients()
@@ -92,7 +94,7 @@ class FedKDSA(Server):
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
-            searchs= self.tree.query(embedding, self.args.num_agg_clients)
+            searchs= self.tree.query(embedding, self.num_agg_clients)
             # searchs = self.tree.query(embedding, 10)
             self.sims[cid]=[]
             self.distances[cid] = (searchs[0])

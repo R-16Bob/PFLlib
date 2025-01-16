@@ -521,6 +521,9 @@ if __name__ == "__main__":
     print("=" * 50)
 
     print("Algorithm: {}".format(args.algorithm))
+    if args.algorithm in ["FedKDSA","FedKDSim"]:
+        print("num_agg_clients:{}".format(args.nac))
+        print("beta:{}".format(args.bt))
     print("Local batch size: {}".format(args.batch_size))
     print("Local epochs: {}".format(args.local_epochs))
     print("Local learing rate: {}".format(args.local_learning_rate))
