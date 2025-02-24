@@ -30,6 +30,7 @@ import logging
 
 from flcore.servers.serveravg import FedAvg
 from flcore.servers.serverKDSim import FedKDSim
+from flcore.servers.serverKDSim_AdK import FedKDSim_AdK
 from flcore.servers.serverKDSA import FedKDSA
 # from flcore.servers.serverpFedMe import pFedMe
 # from flcore.servers.serverperavg import PerAvg
@@ -212,6 +213,9 @@ def run(args):
             server = FedAvg(args, i)
         elif args.algorithm == "FedKDSim":
             server = FedKDSim(args, i)
+        elif args.algorithm == "FedKDSim_AdK":
+            server = FedKDSim_AdK(args, i)
+            print("rate of clients: {}".format(args.r))
         elif args.algorithm == "FedKDSA":
             server = FedKDSA(args, i)
         elif args.algorithm == "Local":
@@ -499,6 +503,8 @@ if __name__ == "__main__":
     # FedKDSim
     parser.add_argument('-nac', "--num_agg_clients", type=int, default=4)
     parser.add_argument('-dep', "--decouple", type=bool, default=False)
+    parser.add_argument('-r', "--r", type=float, default=1,
+                        help="The rate of clients for adaptive K")
     args = parser.parse_args()
 
     # redirect output
@@ -522,8 +528,8 @@ if __name__ == "__main__":
 
     print("Algorithm: {}".format(args.algorithm))
     if args.algorithm in ["FedKDSA","FedKDSim"]:
-        print("num_agg_clients:{}".format(args.nac))
-        print("beta:{}".format(args.bt))
+        print("num_agg_clients:{}".format(args.num_agg_clients))
+        print("beta:{}".format(args.beta))
     print("Local batch size: {}".format(args.batch_size))
     print("Local epochs: {}".format(args.local_epochs))
     print("Local learing rate: {}".format(args.local_learning_rate))

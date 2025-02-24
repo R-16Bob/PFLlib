@@ -94,18 +94,17 @@ class FedKDSA(Server):
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
-            searchs= self.tree.query(embedding, self.num_agg_clients)
-            # searchs = self.tree.query(embedding, 10)
+            searchs= self.tree.query(embedding, self.num_agg_clients)  # search for k similar models, containing itself
             self.sims[cid]=[]
             self.distances[cid] = (searchs[0])
             # construct the threshold
-            dist_min=self.distances[cid][1]
+            dist_min=self.distances[cid][1]  # omit client i itself, with distance=0
             dist_avg=sum(self.distances[cid])/(len(self.distances[cid])-1)  # because the distance between cid and itself is zero, the avg can be calculated like this
             threshold=dist_avg+(epoch/self.beta)*(dist_min-dist_avg)
             print("distances:{}".format(self.distances[cid]))
             print("dist_min:{}, dist_avg:{}, threshold:{}".format(dist_min, dist_avg,threshold))
             self.sims[cid].append(cid)
-            for id,vid in enumerate(searchs[1]):
+            for id,vid in enumerate(searchs[1]):  # searchs[1] is indexs of searchs[0]
                 if id == 0:
                     continue
                 # print("distance:{}, threshold:{}".format(self.distances[cid][id],threshold))
@@ -174,7 +173,7 @@ class FedKDSA(Server):
     def train(self):
         for i in range(self.global_rounds+1):  # global round
             s_t = time.time()
-            self.send_models(i)  # override send models
+            self.send_models(i)  # override send models; After aggregation, update clients' models
             self.selected_clients = self.select_clients()
 
 

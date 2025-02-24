@@ -27,11 +27,13 @@ import numpy as np
 from threading import Thread
 # KD-tree based similarity for personalized aggregation
 # preserve high layers of model
-class FedKDSim(Server):
+class FedKDSim_AdK(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
         self.dep=args.decouple
         self.layer_idx = args.layer_idx
+        # Adk: adaptive K
+        self.r = args.r
 
         # select slow clients
         self.set_slow_clients()
@@ -86,15 +88,26 @@ class FedKDSim(Server):
     # Search similar models for each selected client using KD-Tree
     def get_similar_models(self, epoch):
         #if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
+        self.adaptive_K=[]
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
-            searchs= self.tree.query(embedding, self.args.num_agg_clients)
+            # adaptive K
+            # calculate radius
+            search = self.tree.query(embedding, len(self.selected_clients) * self.r)
+            avg_dis = np.mean(search[0])
+            adaptive_K = self.tree.query_ball_point(embedding, avg_dis, return_length=True)
+            # adaptive_K = np.floor(np.log2(neighbor_counts)).astype(int)
+            self.adaptive_K.append(adaptive_K)
+
+            # searchs= self.tree.query(embedding, self.args.num_agg_clients)
+            searchs = self.tree.query(embedding, adaptive_K)
             self.sims[cid]=[]
             for vid in searchs[1]:
                 self.sims[cid].append(self.vid_to_cid[vid])
             # print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
-
+        # print("neighbor_counts:", neigbor_cn)
+        print("adaptive_K:", self.adaptive_K)
     # override receive_models
     def receive_models(self,epoch):
         assert (len(self.selected_clients) > 0)
