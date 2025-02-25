@@ -88,17 +88,28 @@ class FedKDSim_AdK(Server):
     # Search similar models for each selected client using KD-Tree
     def get_similar_models(self, epoch):
         #if cid in self.cid_to_vectors and (self.curr_round+1)%self.args.h_interval == 0:
-        self.adaptive_K=[]
+
+        # adaptive K
+        # perform AdK every 5 rounds
+        if epoch % self.args.adk_interval == 0:
+            self.adaptive_K = []
+            for client in self.selected_clients:
+                cid = client.id
+                # calculate radius
+                embedding = self.cid_to_vectors[cid]
+                search = self.tree.query(embedding, len(self.selected_clients) * self.r)
+                if self.args.mean_dis:
+                    search_dis = np.mean(search[0])
+                else: # use median distancedirs
+                    search_dis = np.median(search[0])
+                adaptive_K = self.tree.query_ball_point(embedding, search_dis, return_length=True)
+                # adaptive_K = np.floor(np.log2(neighbor_counts)).astype(int)
+                self.adaptive_K.append(adaptive_K)
+            # print("adaptive_K:", self.adaptive_K)
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
-            # adaptive K
-            # calculate radius
-            search = self.tree.query(embedding, len(self.selected_clients) * self.r)
-            avg_dis = np.mean(search[0])
-            adaptive_K = self.tree.query_ball_point(embedding, avg_dis, return_length=True)
-            # adaptive_K = np.floor(np.log2(neighbor_counts)).astype(int)
-            self.adaptive_K.append(adaptive_K)
+
 
             # searchs= self.tree.query(embedding, self.args.num_agg_clients)
             searchs = self.tree.query(embedding, adaptive_K)
@@ -107,7 +118,7 @@ class FedKDSim_AdK(Server):
                 self.sims[cid].append(self.vid_to_cid[vid])
             # print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
         # print("neighbor_counts:", neigbor_cn)
-        print("adaptive_K:", self.adaptive_K)
+
     # override receive_models
     def receive_models(self,epoch):
         assert (len(self.selected_clients) > 0)
