@@ -92,20 +92,26 @@ class FedKDSim_AdK(Server):
         # adaptive K
         # perform AdK every 5 rounds
         if epoch % self.args.adk_interval == 0:
-            self.adaptive_K = []
+            self.adaptive_K = {}
             for client in self.selected_clients:
                 cid = client.id
                 # calculate radius
                 embedding = self.cid_to_vectors[cid]
-                search = self.tree.query(embedding, len(self.selected_clients) * self.r)
+                # k = len(self.selected_clients) * self.r
+                k = len(self.vid_to_cid) * self.r # for partial client participation
+                search = self.tree.query(embedding, k)
+                if self.args.show_dis and epoch%10==0:
+                    print("client{},search_dis:{}".format(cid, search[0]) )
                 if self.args.mean_dis:
                     search_dis = np.mean(search[0])
                 else: # use median distancedirs
                     search_dis = np.median(search[0])
                 adaptive_K = self.tree.query_ball_point(embedding, search_dis, return_length=True)
+
                 # adaptive_K = np.floor(np.log2(neighbor_counts)).astype(int)
-                self.adaptive_K.append(adaptive_K)
-            # print("adaptive_K:", self.adaptive_K)
+                self.adaptive_K[cid]=adaptive_K
+            if epoch % 10 == 0:
+                print("adaptive_K:", self.adaptive_K.values())
         for client in self.selected_clients:
             cid=client.id
             embedding = self.cid_to_vectors[cid]
@@ -114,7 +120,7 @@ class FedKDSim_AdK(Server):
             # searchs= self.tree.query(embedding, self.args.num_agg_clients)
             searchs = self.tree.query(embedding, adaptive_K)
             self.sims[cid]=[]
-            for vid in searchs[1]:
+            for vid in np.atleast_1d(searchs[1]):
                 self.sims[cid].append(self.vid_to_cid[vid])
             # print("Epoch:{},cid:{},sims:{}".format(epoch, cid, self.sims[cid]))
         # print("neighbor_counts:", neigbor_cn)

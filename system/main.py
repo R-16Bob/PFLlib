@@ -505,12 +505,14 @@ if __name__ == "__main__":
     # FedKDSim
     parser.add_argument('-nac', "--num_agg_clients", type=int, default=4)
     parser.add_argument('-dep', "--decouple", type=bool, default=False)
-    # AdK
+    # FedKDSim_AdK
     parser.add_argument('-r', "--r", type=float, default=1,
                         help="The rate of clients for adaptive K")
     parser.add_argument('-adk_int', "--adk_interval", type=int, default=1)
     parser.add_argument('-mean_dis', "--mean_dis", type=bool, default=True,
                         help="Whether to use mean distance or median distance.")
+    parser.add_argument('-sdis', "--show_dis", type=bool, default=True,
+                        help="Whether to show the distance between clients.")
     args = parser.parse_args()
 
     # redirect output
